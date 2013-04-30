@@ -70,6 +70,13 @@ class WD.Player
     @gameController.roomsAreLoaded.filter(_.identity).onValue =>
       @bindFirebase()
 
+  cleanStats: ->
+    return unless @stats
+    _.each @stats, (v, k) =>
+      @stats[k] = parseInt(v, 10)
+      if isNaN(@stats[k])
+        @stats[k] = 0
+
   initBaconJunk: ->
     @positionData = V2(0, 0)
     started = false
@@ -134,6 +141,7 @@ class WD.Player
 
     @fb.child('stats').on 'value', (snapshot) =>
       _.extend @stats, snapshot.val()
+      @cleanStats()
       # propagate the stats change to the player color so everyone can see it
       @statsUpdates.push(@stats)
       @color = WD.saturate(@stats)

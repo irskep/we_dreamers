@@ -332,6 +332,7 @@ class WD.GameController
         @player.stats[k] -= (newColor[k] / channelTotal) * WD.BONK_AMOUNT
         @player.stats[k] = Math.max(@player.stats[k], 0)
 
+      @player.cleanStats()
       @player.fb.child('stats').set(@player.stats)
 
       @player.fb.child('stats/roomsDug').set(@player.stats.roomsDug + 1)
@@ -353,6 +354,7 @@ class WD.GameController
           room1: newPoint
           room2: room.gridPoint
           type: 'basic'
+      @player.cleanStats()
       _.each ['r', 'g', 'b'], (k) =>
         @player.stats[k] -= WD.BONK_AMOUNT / 2
         @player.stats[k] = Math.max(@player.stats[k], 0)
@@ -364,6 +366,7 @@ class WD.GameController
     )
     value = room.currentValue()
     room.fb.child('lastHarvested').set(WD.time())
+    @player.cleanStats()
     _.each ['r', 'g', 'b'], (k) =>
       value[k] *= (65 + @player.level * 5)
       @player.fb.child('stats').child(k).set(
@@ -378,6 +381,7 @@ class WD.GameController
       else
         nextKey = WD.prevStampKey(room.stamp.key)
     else
+      @player.cleanStats()
       @player.fb.child('stats/stampsStamped').set(
         (@player.stats.stampsStamped or 0) + 1)
     @player.lastStampKey = nextKey

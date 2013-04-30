@@ -2811,6 +2811,7 @@
           _this.player.stats[k] -= (newColor[k] / channelTotal) * WD.BONK_AMOUNT;
           return _this.player.stats[k] = Math.max(_this.player.stats[k], 0);
         });
+        this.player.cleanStats();
         this.player.fb.child('stats').set(this.player.stats);
         this.player.fb.child('stats/roomsDug').set(this.player.stats.roomsDug + 1);
         fbRooms.child(newPoint.toString()).set({
@@ -2834,6 +2835,7 @@
             type: 'basic'
           });
         }
+        this.player.cleanStats();
         return _.each(['r', 'g', 'b'], function(k) {
           _this.player.stats[k] -= WD.BONK_AMOUNT / 2;
           _this.player.stats[k] = Math.max(_this.player.stats[k], 0);
@@ -2853,6 +2855,7 @@
       }
       value = room.currentValue();
       room.fb.child('lastHarvested').set(WD.time());
+      this.player.cleanStats();
       return _.each(['r', 'g', 'b'], function(k) {
         value[k] *= 65 + _this.player.level * 5;
         return _this.player.fb.child('stats').child(k).set(Math.max(Math.min(_this.player.stats[k] + value[k], _this.player.maxBucket()), 0));
@@ -2873,6 +2876,7 @@
           nextKey = WD.prevStampKey(room.stamp.key);
         }
       } else {
+        this.player.cleanStats();
         this.player.fb.child('stats/stampsStamped').set((this.player.stats.stampsStamped || 0) + 1);
       }
       this.player.lastStampKey = nextKey;
@@ -2979,6 +2983,20 @@
       });
     }
 
+    Player.prototype.cleanStats = function() {
+      var _this = this;
+
+      if (!this.stats) {
+        return;
+      }
+      return _.each(this.stats, function(v, k) {
+        _this.stats[k] = parseInt(v, 10);
+        if (isNaN(_this.stats[k])) {
+          return _this.stats[k] = 0;
+        }
+      });
+    };
+
     Player.prototype.initBaconJunk = function() {
       var buses, isStillBus, properties, started, stopMoving, updateStreams,
         _this = this;
@@ -3065,6 +3083,7 @@
       });
       this.fb.child('stats').on('value', function(snapshot) {
         _.extend(_this.stats, snapshot.val());
+        _this.cleanStats();
         _this.statsUpdates.push(_this.stats);
         _this.color = WD.saturate(_this.stats);
         return _this.fb.child('color').set(_this.color);
@@ -3267,9 +3286,9 @@
     template = _.template("<div class=\"help-button\"><a href=\"javascript:void(0);\">Help</a></div>\n<div class=\"stat-color stat-r\"><div class=\"color-key mono\">r</div></div>\n<div class=\"stat-color stat-g\"><div class=\"color-key mono\">g</div></div>\n<div class=\"stat-color stat-b\"><div class=\"color-key mono\">b</div></div>\n<div class=\"color-key-instructions\">\n  Press <span class=\"mono\">r</span>, <span class=\"mono\">g</span>,\n  and <span class=\"mono\">b</span> to mix what color your next room will be.\n  Your dot shows your next room's color.\n  <hr>\n</div>\n<div class=\"stat-level\">Level <%- level %></div>\n<% if (roomsDug) { %>\n  <div class=\"stat-rooms-dug\">Rooms dug: <%- roomsDug %></div>\n<% } %>\n<% if (notesLeft) { %>\n  <div class=\"stat-notes-left\">Notes written: <%- notesLeft %></div>\n<% } %>\n<% if (stampsStamped) { %>\n  <div class=\"stat-stamps-stamped\">Stamps: <%- stampsStamped %></div>\n<% } %>\n<% if (level == 1) { %>\n  <div class=\"level-instructions\">Dig rooms to reach level 2.</div>\n<% } %>\n<% if (level == 2) { %>\n  <div class=\"level-instructions\">\n    Leave notes on rooms you dug to reach level 3.\n </div>\n<% } %>\n<% if (level >= 3) { %>\n  <div class=\"stamp-instructions\">Press J and K to stamp</div>\n<% } %>");
     player.statsUpdates.onValue(function(data) {
       data = _.clone(player.stats);
-      data.level = player.level;
-      data.notesLeft = player.stats.notesLeft || 0;
-      data.stampsStamped = player.stats.stampsStamped || 0;
+      data.level = parseInt(player.level, 10);
+      data.notesLeft = parseInt(player.stats.notesLeft, 10) || 0;
+      data.stampsStamped = parseInt(player.stats.stampsStamped, 10) || 0;
       $el.html(template(data));
       return _.each(['r', 'g', 'b'], function(k) {
         return $el.find(".stat-" + k).css({
@@ -3307,6 +3326,7 @@
         isNew = !room.fortuneText;
         room.fb.child('fortuneText').set($el.find('textarea').val());
         if (isNew) {
+          player.cleanStats();
           player.fb.child('stats/notesLeft').set((player.stats.notesLeft || 0) + 1);
         }
         return false;

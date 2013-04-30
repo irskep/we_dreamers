@@ -99,9 +99,9 @@ WD.showStats = (player) =>
 
   player.statsUpdates.onValue (data) ->
     data = _.clone player.stats
-    data.level = player.level
-    data.notesLeft = player.stats.notesLeft or 0
-    data.stampsStamped = player.stats.stampsStamped or 0
+    data.level = parseInt(player.level, 10)
+    data.notesLeft = parseInt(player.stats.notesLeft, 10) or 0
+    data.stampsStamped = parseInt(player.stats.stampsStamped, 10) or 0
     $el.html(template(data))
     _.each ['r', 'g', 'b'], (k) ->
       $el.find(".stat-#{k}").css
@@ -148,6 +148,7 @@ WD.showRoom = (player) =>
         isNew = !room.fortuneText
         room.fb.child('fortuneText').set($el.find('textarea').val())
         if isNew
+          player.cleanStats()
           player.fb.child('stats/notesLeft').set(
             (player.stats.notesLeft or 0) + 1)
         false
